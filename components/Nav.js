@@ -4,7 +4,7 @@ import requests from '../utils/requests';
 const Nav = () => {
   const router = useRouter();
   const clickHandler = (key) => {
-    router.push(`/?genre=${key}`);
+    router.push(`movies/?genre=${key}`);
   };
   return (
     <nav className="relative">
