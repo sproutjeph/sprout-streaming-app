@@ -1,4 +1,3 @@
-import { CheckIcon, ExclamationCircleIcon } from '@heroicons/react/outline';
 import { useState } from 'react';
 import Header from './Header';
 import { signIn } from 'next-auth/client';
@@ -21,54 +20,53 @@ async function createUser(email, password) {
 
 const AuthForm = () => {
   const router = useRouter();
-
+  const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
-  const [emailIsValid, setEmailIsValid] = useState(false);
   const [password, setPassword] = useState('');
-  const [passwordIsValid, setPasswordIsValid] = useState(false);
-  const [error, setError] = useState(false);
-  const [isLogin, setIsLogin] = useState(true);
+  const [comfirmPassword, setComfirmPassword] = useState('');
+  const [hasAccount, setHasAccount] = useState(true);
 
   const emailChangeHandler = (e) => {
     setEmail(e.target.value);
-    setError(false);
-    setEmailIsValid(true);
   };
 
   const passwordChangeHandler = (e) => {
     setPassword(e.target.value);
-    setError(false);
-    setPasswordIsValid(true);
   };
 
-  const handelSubmit = async (e) => {
-    e.preventDefault();
-    if (email.trim().length === 0) {
-      setError(true);
-      return;
-    }
-    if (password.trim().length !== 0) {
-      setPasswordIsValid(true);
-    }
-    console.log(email, password);
+  const comfirmPasswordChangeHandler = (e) => {
+    setComfirmPassword(e.target.value);
+  };
 
+  const restForm = () => {
     setEmail('');
     setPassword('');
-    setEmailIsValid(false);
-    setPasswordIsValid(false);
-    if (isLogin) {
+    setComfirmPassword('');
+  };
+  const handelSubmit = async (e) => {
+    e.preventDefault();
+    restForm();
+    setLoading(true);
+    console.log(email, password);
+
+    if (hasAccount) {
       const result = await signIn('credentials', {
         redirect: false,
         email: email,
         password: password,
       });
+      setLoading(false);
       if (!result.error) {
         router.replace('/movies');
       }
     } else {
       try {
         const result = await createUser(email, password);
+        setLoading(false);
         console.log(result);
+        if (!result.error) {
+          setHasAccount(true);
+        }
       } catch (error) {
         console.log(error);
       }
@@ -76,7 +74,7 @@ const AuthForm = () => {
   };
 
   function switchAuthModeHandler() {
-    setIsLogin((prevState) => !prevState);
+    setHasAccount((prevState) => !prevState);
   }
 
   return (
@@ -84,7 +82,7 @@ const AuthForm = () => {
       <Header />
       <div className="mt-20">
         <h1 className="uppercase text-center text-3xl mb-4">
-          {isLogin ? 'Login' : 'Sign Up'}
+          {hasAccount ? 'Login' : 'Sign Up'}
         </h1>
 
         <form className="flex flex-col items-center" onSubmit={handelSubmit}>
@@ -101,12 +99,6 @@ const AuthForm = () => {
               onChange={emailChangeHandler}
               className="bg-transparent w-full p-1 rounded-md text-black text-lg"
             />
-            {error && (
-              <ExclamationCircleIcon className="h-4 bg-white absolute top-[6.5px] right-1 rounded-full text-[red]" />
-            )}
-            {!error && emailIsValid && (
-              <CheckIcon className="h-4 bg-green-400 absolute top-[6.5px] right-1 rounded-full" />
-            )}
           </div>
           <label
             htmlFor="password"
@@ -125,25 +117,48 @@ const AuthForm = () => {
               onChange={passwordChangeHandler}
               className="bg-transparent w-full p-1 rounded-md text-black text-lg"
             />
-            {error && (
-              <ExclamationCircleIcon className="h-4 bg-white absolute top-[6.5px] right-1 rounded-full text-[red]" />
-            )}
-            {!error && passwordIsValid && (
-              <CheckIcon className="h-4 bg-green-400 absolute top-[6.5px] right-1 rounded-full" />
-            )}
           </div>
+          {!hasAccount && (
+            <div>
+              <label
+                htmlFor="comfirmPassword"
+                name="comfirmPassword"
+                className="block capitalize text-center"
+              >
+                Comfirm password
+              </label>
+              <div className="bg-gray-300 w-[20rem] relative rounded-md border md:w-96">
+                <input
+                  type="password"
+                  id="comfirmPassword"
+                  name="comfirmPassword"
+                  value={comfirmPassword}
+                  required
+                  onChange={comfirmPasswordChangeHandler}
+                  className="bg-transparent w-full p-1 rounded-md text-black text-lg"
+                />
+              </div>
+            </div>
+          )}
+
           <button
-            className="w-[20rem] rounded-md bg-red-500 text-xl uppercase font-bold tracking-wider py-1 hover:bg-transparent hover:border-2 md:w-96"
+            className={`w-[20rem] rounded-md bg-red-500 text-xl uppercase font-bold tracking-wider py-1 hover:bg-transparent hover:border-2 md:w-96 ${
+              !hasAccount && 'mt-10'
+            }`}
             type="submit"
           >
-            {isLogin ? 'Login' : 'Create Account'}
+            {hasAccount ? 'Login' : 'Create Account'}
+            {loading && (
+              <div className="animate-spin h-5 w-5 rounded-full  inline-block ml-5 border-t-black border-r-black border-2 bg-white" />
+            )}
           </button>
+
           <button
             onClick={switchAuthModeHandler}
             type="button"
             className=" mt-4"
           >
-            {isLogin ? 'Create new account' : 'Login with existing account'}
+            {hasAccount ? 'Create new account' : 'Login with existing account'}
           </button>
         </form>
       </div>
